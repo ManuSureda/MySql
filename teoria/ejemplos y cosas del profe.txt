@@ -1,0 +1,599 @@
+DELIMITER $$
+
+CREATE PROCEDURE armar_lista_correo()
+BEGIN
+	# Declaraciones.
+	DECLARE correo varchar(50);
+	DECLARE lista varchar(1000) DEFAULT '';
+	DECLARE hecho INT DEFAULT 0;
+	# El cursor se declara DESPUÉS de las variables
+	# y ANTES del handler.
+	DECLARE leer_correo CURSOR FOR SELECT email FROM personas;
+	DECLARE CONTINUE HANDLER FOR NOT FOUND SET hecho = TRUE;
+
+	# Siempre hay que abrir el cursos antes de usarlo.
+	OPEN leer_correo;
+
+	# Bucle para leer el cursor, puede usarse otro
+	# que no sea LOOP, a criterio de ustedes.
+	leer: LOOP
+		# Leo info del cursor
+		FETCH leer_correo INTO correo;
+		# Verifico que haya info, sino salgo.
+		IF hecho THEN
+			LEAVE leer;
+		END IF;
+		# Si hay info, la utilizo.
+		SET lista = concat(correo, ";", lista);
+	END LOOP;
+
+	# Cierro el cursor. No es obligatorio ya que
+	# se cierra solo, pero si recomendable.
+	CLOSE leer_correo;
+
+	# Lo ideal sería que el procedimiento devuelva un
+	# valor, no hacer esto. Queda como tarea...
+	SELECT lista;
+END $$
+
+________________aca otro___________________________
+
+DROP TABLE IF EXISTS items;
+DROP TABLE IF EXISTS facturas;
+DROP TABLE IF EXISTS liquidacion;
+DROP TABLE IF EXISTS clientes;
+CREATE TABLE clientes (id_cliente int AUTO_INCREMENT primary key, razon_social varchar(50), cuit varchar(50));
+CREATE TABLE liquidacion (id_liquidacion int AUTO_INCREMENT primary key, id_cliente int, cantidad_facturas int, fecha datetime, total float,foreign key fk_liquidacion_clientes(id_cliente) references clientes(id_cliente));
+CREATE TABLE facturas (id_factura int AUTO_INCREMENT primary key, numero varchar(50), id_cliente int, fecha date, foreign key fk_facturas_cliente (id_cliente) references clientes(id_cliente) ON DELETE CASCADE);
+CREATE TABLE items(id_item int auto_increment primary key,id_factura int, numero varchar(50), producto varchar(50), precio_unitario float, cantidad float , foreign key fk_item_facturas (id_factura) references facturas(id_factura) ON DELETE CASCADE);
+ALTER TABLE facturas add id_liquidacion int ;
+ALTER TABLE facturas add foreign key fk_facturas_liquidacion (id_liquidacion) references liquidacion(id_liquidacion);
+insert into clientes (razon_social, cuit) values ('Cliente 1','CLIENTE1');
+insert into clientes (razon_social, cuit) values ('Cliente 2','CLIENTE2');
+insert into clientes (razon_social, cuit) values ('Cliente 3','CLIENTE3');
+insert into clientes (razon_social, cuit) values ('Cliente 4','CLIENTE4');
+insert into facturas (id_factura, id_cliente, numero, fecha) values (1,1,'1','2017-01-01');
+insert into items (id_factura, producto, precio_unitario,cantidad) values (1,'prd1',10,5);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (1,'prd2',20,3);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (1,'prd1',50,1);
+insert into facturas (id_factura, id_cliente, numero, fecha) values (2,1,'2','2017-01-02');
+insert into items (id_factura, producto, precio_unitario,cantidad) values (2,'prd3',60,5);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (2,'prd4',20,1);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (2,'prd5',10,1);
+insert into facturas (id_factura, id_cliente, numero, fecha) values (3,1,'3','2017-01-03');
+insert into items (id_factura, producto, precio_unitario,cantidad) values (3,'prd3',60,5);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (3,'prd4',20,1);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (3,'prd5',10,1);
+insert into facturas (id_factura, id_cliente, numero, fecha) values (4,1,'4','2017-01-04');
+insert into items (id_factura, producto, precio_unitario,cantidad) values (4,'prd3',60,5);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (4,'prd4',20,1);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (4,'prd5',10,1);
+insert into facturas (id_factura, id_cliente, numero, fecha) values (5,2,'1','2017-01-05');
+insert into items (id_factura, producto, precio_unitario,cantidad) values (5,'prd3',60,5);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (5,'prd4',20,1);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (5,'prd5',10,1);
+insert into facturas (id_factura, id_cliente, numero, fecha) values (6,2,'2','2017-01-02');
+insert into items (id_factura, producto, precio_unitario,cantidad) values (6,'prd3',60,5);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (6,'prd4',20,1);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (6,'prd5',10,1);
+insert into facturas (id_factura, id_cliente, numero, fecha) values (7,2,'3','2017-01-03');
+insert into items (id_factura, producto, precio_unitario,cantidad) values (7,'prd3',60,5);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (7,'prd4',20,1);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (7,'prd5',10,1);
+insert into facturas (id_factura, id_cliente, numero, fecha) values (8,3,'1','2017-02-01');
+insert into items (id_factura, producto, precio_unitario,cantidad) values (8,'prd3',60,5);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (8,'prd4',20,1);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (8,'prd5',10,1);
+insert into facturas (id_factura, id_cliente, numero, fecha) values (9,3,'1','2017-02-01');
+insert into items (id_factura, producto, precio_unitario,cantidad) values (9,'prd3',60,5);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (9,'prd4',20,1);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (9,'prd5',10,1);
+
+
+
+
+--------------aca otro------------------------------
+
+delimiter $$
+drop procedure eliminar_liquidaciones;
+CREATE PROCEDURE eliminar_liquidaciones(pIdCliente int)
+begin
+	update facturas set id_liquidacion =null where id_cliente = pIdCliente;
+    delete from liquidacion where id_cliente = id_cliente;
+end
+$$
+
+delimiter $$
+#drop  procedure liquidar_cliente_tradicional;
+CREATE PROCEDURE liquidar_cliente_tradicional (pIdCliente int)
+BEGIN
+	declare vTotal float;
+    declare vCant float;
+    declare vDummy int;
+    declare vIdLiquidacion int;
+	select count(distinct f.id_factura), sum(i.precio_unitario * i.cantidad) into vCant, vTotal from facturas f inner join items i on f.id_factura = i.id_factura where f.id_liquidacion is null and f.id_cliente = pIdCliente;
+	insert into liquidacion(id_cliente,cantidad_facturas, fecha , total) values (pIdCliente,vCant,now(),vTotal);
+    #Se toma el id_liquidacion
+    set vIdLiquidacion = last_insert_id();
+    update facturas
+    set id_liquidacion = vIdLiquidacion
+    where id_cliente = pIdCliente and id_liquidacion is null;
+END;
+$$
+
+
+#CREAR LIQUIDACION CURSORES
+delimiter $$
+drop procedure liquidar_cliente ;
+CREATE PROCEDURE liquidar_cliente (pIdCliente int)
+BEGIN
+    DECLARE vTotal float;
+    DECLARE vIdLiquidacion int;
+    DECLARE vIdFactura int;
+    DECLARE vCant int default 0;
+    DECLARE vFinished int DEFAULT 0;
+    DECLARE vSuma float default 0 ;
+    DECLARE vDummy int;
+    DECLARE cur_liquidacion CURSOR FOR select f.id_factura, sum(i.precio_unitario * i.cantidad) as total from facturas f inner join items i on f.id_factura = i.id_factura where f.id_liquidacion is null and f.id_cliente = pIdCliente group by f.id_factura;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET vFinished = 1;
+    #Se inserta la liquidacion pero en 0 asi se puede updatear luego
+    insert into liquidacion(id_cliente, fecha , total) values (pIdCliente,now(),0);
+    #Se toma el id_liquidacion
+    set vIdLiquidacion = last_insert_id();
+
+    open cur_liquidacion;
+    FETCH cur_liquidacion INTO   vIdFactura, vTotal;
+    WHILE (vFinished=0) DO
+        #se suman los datos de las facturas
+        SET vSuma = vSuma + vTotal;
+        SET vCant = vCant + 1;
+        #Se updatea la factura asignandole la correspondiente liquidacion
+        UPDATE facturas set id_liquidacion = vIdLiquidacion where id_factura = vIdFactura;
+        FETCH cur_liquidacion INTO   vIdFactura, vTotal;
+    END while;
+    #Se asigna el total y la cantidad de facturas a la liquidacion
+    update liquidacion set cantidad_facturas = vCant, total = vSuma where id_liquidacion = vIdLiquidacion;
+    close cur_liquidacion;
+END
+$$
+
+CALL eliminar_liquidaciones(1);
+CALL liquidar_cliente_tradicional(1);
+CALL liquidar_cliente(1);
+select * from facturas
+# INSERTAR LUEGO#
+delete from facturas where id_factura = 10;
+insert into facturas (id_factura, id_cliente, numero, fecha) values (10,1,'1','2017-03-01');
+insert into items (id_factura, producto, precio_unitario,cantidad) values (10,'prd3',60,5);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (10,'prd4',20,1);
+insert into items (id_factura, producto, precio_unitario,cantidad) values (10,'prd5',10,1);
+
+
+
+
+
+
+--------------otro----------------------
+
+
+USE torneo;
+CREATE TABLE equipos ( id_equipo int auto_increment primary key,
+					   nombre_equipo varchar(50),
+                       CONSTRAINT UNQ_EQUIPOS_NOMBRE_EQUIPO UNIQUE (nombre_equipo));
+CREATE TABLE partidos(
+id_partido int AUTO_INCREMENT primary key,
+id_equipo_local int ,
+id_equipo_visitante int,
+CONSTRAINT FK_PARTIDOS_ID_EQUIPO_LOCAL_EQUIPOS foreign key (id_equipo_local) references equipos(id_equipo),
+CONSTRAINT FK_PARTIDOS_ID_EQUIPO_VISITANTE_EQUIPOS  foreign key (id_equipo_visitante) references equipos(id_equipo));
+
+
+create table jugadores ( 
+id_jugador int auto_increment primary key,
+nombre varchar(50),
+apellido varchar(50),
+id_equipo int,
+CONSTRAINT fk_jugadores_jugadores_equipos foreign key (id_equipo) references equipos(id_equipo)); 
+
+ALTER TABLE jugadores modify column id_equipo int not null;
+
+create table jugadores_x_partido (
+id_jugador_x_partido int auto_increment primary key,
+id_jugador int,
+id_partido int,
+puntos int,
+rebotes int,
+minutos int,
+tapones int,
+constraint fk_jugadores_x_partido_jugadores foreign key (id_jugador) references jugadores(id_jugador),
+constraint fk_jugadores_x_partido_partido foreign key (id_partido) references partidos(id_partido));
+
+
+------------------otro--------------------------
+ALTER  TABLE equipos ADD COLUMN fundacion date not null;
+ALTER  TABLE equipos ADD COLUMN antiguedad int(10);
+
+DROP TRIGGER TIB_EQUIPOS_CALC_ANTIG;
+DELIMITER $$
+CREATE TRIGGER TIB_EQUIPOS_CALC_ANTIG BEFORE INSERT ON equipos FOR EACH ROW
+BEGIN
+	IF (NEW.fundacion > now()) then
+		signal sqlstate '10001' 
+		SET MESSAGE_TEXT = 'La fecha no puede ser mayor al dia de hoy', 
+		MYSQL_ERRNO = 2.2;
+	END IF;
+    SET NEW.antiguedad = DATEDIFF(NOW(),NEW.fundacion) / 365;
+END
+$$
+DELIMITER ; 
+
+
+DELIMITER $$
+CREATE TRIGGER TUB_JUGADORES_X_EQ_X_PARTIDO_RESTRICT BEFORE UPDATE ON jugadores_x_partido
+BEGIN
+		if  (old.id_jugador <> new.id_jugador) OR (old.id_partido <> new.id_partido) then
+				signal sqlstate '10001' SET MESSAGE_TEXT = 'No se puede cambiar el partido o el jugador, por favor borrad y reinsertad', MYSQL_ERRNO = 2.2;
+		end if;
+END;
+$$
+
+
+-------------------------------------------------------clase usuarios
+
+Capítulo 7 del Manual de referencia de MySQL trata todos estos temas
+https://dev.mysql.com/doc/refman/5.7/en/security.html
+
+/*
+ *	Estas son las diferentes tablas dentro de la base de datos
+ *	mysql donde el motor almacena los permisos.
+ **/
+• user: User accounts, global privileges, and other non-privilege columns
+• db: Database-level privileges
+• tables_priv: Table-level privileges
+• columns_priv: Column-level privileges
+• procs_priv: Stored procedure and function privileges
+• proxies_priv: Proxy-user privileges
+
+/**
+ * Estos son los diferentes tipos de privilegios que
+ * pueden otorgarse y revocarse a los usuarios
+ **/
+Privilege Type                         Description                                                         
+ALL                                    Grants all privileges, except WITH GRANT OPTION                      
+ALTER                                  Grants use of ALTER TABLE 
+CREATE                                 Grants use of CREATE TABLE  
+CREATE TEMPORARY TABLES                Grants use of CREATE TEMPORARY TABLE
+DELETE                                 Grants use of DELETE 
+DROP                                   Grants use of DROP TABLE 
+EXECUTE                                Grants use of stored procedures
+FILE                                   Grants use of SELECT INTO OUTFILE and LOAD DATA INFILE 
+GRANT OPTION                           Used to revoke WITH GRANT OPTION 
+INDEX                                  Grants use of CREATE INDEX and DROP INDEX 
+INSERT                                 Grants use of INSERT 
+LOCK TABLES                            Grants use of LOCK TABLES on tables on which the user already has the SELECT privilege
+PROCESS                                Grants use of SHOW FULL PROCESSLIST 
+RELOAD                                 Grants use of FLUSH 
+REPLICATION CLIENT                     Grants ability to ask where the slaves/masters are
+REPLICATION SLAVE                      Grants ability of the replication slaves to read information from master
+SELECT                                 Grants use of SELECT 
+SHOW DATABASES                         Grants use of SHOW DATABASES 
+SHUTDOWN                               Grants use of MYSQLADMIN SHUTDOWN 
+SUPER                                  Grants the user one connection, one time, 
+                                       even if the server is at maximum connections limit, 
+                                       and grants use of CHANGE MASTER, KILL THREAD, MYSQLADMIN DEBUG, 
+                                       PURGE MASTER LOGS, and SET GLOBAL 
+UPDATE                                 Grants use of UPDATE 
+USAGE                                  Grants access to log in to the MySQL Server but bestows no privileges 
+WITH GRANT OPTION                      Grants ability for users to grant any privilege they possess to another user 
+
+-- Ingresan a MySQL con usuario root
+mysql -u root -p
+
+-- Crean una base de datos nueva
+create database clase_usuarios;
+
+-- Crean un usuario nuevo
+-- (en el link de abajo tienen información (usando root como ejemplo)
+-- de por qué es necesario crear el mismo usuario para diferentes 
+-- "versiones" de localhost).
+-- https://dba.stackexchange.com/questions/59412/multiple-root-users-in-mysql
+create user 'adminclaseusuarios'@'localhost' identified by 'adminclaseusuarios';
+
+-- Le dan todos los permisos posibles, se transforma
+-- en su ADMIN para esta base de datos.
+GRANT ALL PRIVILEGES ON clase_usuarios.* TO 'ssssss'@'localhost' WITH GRANT OPTION;
+
+-- Cierren la conexión actual e ingresen a MySQL con el nuevo usuario creado
+mysql -u adminclaseusuarios -p
+
+-- Verifiquen que solo tienen acceso a dos bases de datos.
+SHOW databases;
+
+-- Verifiquen los permisos que tiene su usuario actual
+SHOW GRANTS FOR CURRENT_USER();
+
+-- Creamos tablas. Con este usuario no deberían tener problemas.
+-- Se van a utilizar en la guía luego.
+CREATE TABLE `productos` (
+ `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+ `descripcion` varchar(50) NOT NULL,
+ `monto` decimal(10,4) NOT NULL,
+ PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `clientes` (
+ `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+ `razon_social` varchar(50) NOT NULL,
+ `cuit` varchar(30) NOT NULL,
+ PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `sucursales` (
+ `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+ `nombre` varchar(50) NOT NULL,
+ `domicilio` varchar(50) NOT NULL,
+ `host` varchar(50) NOT NULL,
+ PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `empleados` (
+ `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+ `nombre` varchar(50) NOT NULL,
+ `sucursal_id` int(10) unsigned NOT NULL,
+ PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `facturas` (
+ `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+ `sucursal_id` int(10) unsigned NOT NULL,
+ `empleado_id` int(10) unsigned NOT NULL,
+ `cliente_id` int(10) unsigned NOT NULL,
+ `fecha` datetime NOT NULL,
+ `monto` decimal(10,4) NOT NULL,
+ PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `stock` (
+ `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+ `sucursal_id` int(10) unsigned NOT NULL,
+ `producto_id` int(10) unsigned NOT NULL,
+ `cantidad` int(11) NOT NULL,
+ PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `item_factura` (
+ `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+ `producto_id` int(10) unsigned NOT NULL,
+ `factura_id` int(10) unsigned NOT NULL,
+ `cantidad` int(11) NOT NULL,
+ `monto` decimal(10,4) NOT NULL,
+ PRIMARY KEY (`id`)
+);
+
+-- Creamos un nuevo usuario. ¿Funciona? Si no funciona soluciónelo.
+CREATE USER 'pruebasclaseusuarios'@'localhost';
+
+-- Ahora le asignamos contraseña. No olvidarse de utilizar
+-- la función PASSWORD para encriptarla.
+SET PASSWORD FOR 'pruebasclaseusuarios'@'localhost' = PASSWORD('pruebasclaseusuarios');
+
+-- Desde otra terminal ingresen con este nuevo usuario
+-- y vayan probando los permisos a medida que los vayamos asignando.
+-- ¿En que momento tienen efecto?
+mysql -u pruebasclaseusuarios -p
+
+-- A PARTIR DE AHORA, CUANDO HAYA un [1] delante de un comando significa
+-- que se ejecuta desde la ventana del usuario adminclaseusuarios y cuando
+-- haya un [2] se ejecuta desde la ventana del usuario pruebaclaseusuarios.
+
+-- [2] Verificamos BD a las que tenemos acceso
+SHOW databases;
+
+-- [1] Asignamos permisos de lectura en toda la DB
+GRANT SELECT on clase_usuarios.* to 'pruebasclaseusuarios'@'localhost';
+
+-- [2] Verificamos BD a las que tenemos acceso
+SHOW databases;
+
+-- [2] Probamos insertar tres filas nuevas, ¿qué error aparece?
+INSERT INTO productos VALUES ('Pepsi'), ('Coca Cola'), ('Manaos');
+
+-- [1] Asignamos permisos de escritura en la tabla productos
+GRANT INSERT on clase_usuarios.productos to 'pruebasclaseusuarios'@'localhost';
+
+-- [2] Probamos insertar tres filas nuevas, ¿ahora funciona?
+INSERT INTO productos VALUES ('Pepsi'), ('Coca Cola'), ('Manaos');
+
+-- [1] Le permitimos al usuario insertar solo la razon_social de los clientes. 
+-- ¿Se puede? ¿Tiene sentido? ¿En que casos sería útil si se pudiese?
+GRANT INSERT(razon_social) on clase_usuarios.clientes to 'pruebasclaseusuarios'@'localhost';
+
+-- [1] Revocamos permisos generales de lectura
+REVOKE SELECT on clase_usuarios.* to 'pruebasclaseusuarios'@'localhost';
+
+-- [1] Asignamos permisos mezclados
+GRANT SELECT(nombre, sucursal_id), INSERT(nombre) on clase_usuarios.empleados to 'pruebasclaseusuarios'@'localhost';
+
+________________________________________________________________
+
+-- Relaciones entre SQL y MongoDB
+Database -> Database
+Collection -> Table
+Document -> Row
+Field -> Column
+Value -> Value
+
+-- Trabajaremos con una base de datos de contabilidad, con las colecciones
+-- "productos", "facturas", "clientes" y "stock". 
+
+-- El esquema de una factura es el siguiente:
+{
+	cliente: {
+		cuit: "20-202020202020-5"
+		razonSocial: "Toledo",
+		direccion: "Libertad 5752"
+	},
+	tipo: "A",
+	cobrada: true,
+	fecha: "2017-05-31 22:00:00",
+	items: [
+		{
+			cantidad: 4,
+			item: {
+				marca: "Pepsi",
+				nombre: "Pepsi Max",
+				descripcion: "Botella de 1 litro",
+				precio: 15.00
+			}
+		},
+		{
+			cantidad: 2,
+			item: {
+				marca: "Lays",
+				nombre: "Papas sabor jamon crudo",
+				descripcion: "Paquete de 333 gramos",
+				precio: 15.00
+			}
+		},
+		{
+			cantidad: 4,
+			item: {
+				marca: "Cagnoli",
+				nombre: "Salamin picado grueso",
+				descripcion: "Bomba!",
+				precio: 70.00
+			}
+		}
+	]
+}
+
+-- El esquema de un producto es el siguiente:
+{
+	marca: "Pepsi",
+	nombre: "Pepsi Max",
+	descripcion: "Botella de 1 litro",
+	precio: 15.00
+}
+
+-- COMANDOS BÁSICOS
+
+-- 1) BASE DE DATOS
+
+-- 1-a) Listar BD creadas
+show dbs;
+show databases;
+
+-- 1-b) Crear y usar la base de datos
+use contabilidad;
+
+-- 2) COLECCIONES
+
+-- 2-a) Listar collecciones
+show collections;
+
+-- 2-b) Crear colecciones explícitamente
+-- Pueden ver las opciones acá -> https://docs.mongodb.com/manual/reference/method/db.createCollection/
+db.createCollection('facturas', { ...opciones })
+
+
+-- 2-c) Cuando insertan un documento, si no existe la colección se crea automáticamente
+db.facturas.insertOne({id: 4, tipo: "a"});
+
+
+-- 2-d) Las colecciones no tienen schema, aunque pueden definirse reglas de validación
+-- Pueden ver validaciones acá -> https://docs.mongodb.com/manual/core/document-validation/
+
+-- 2-e) Desde la versión 3.4 existen las vistas
+
+-- 2-f) Existen las capped collections
+
+-- 3) CRUD
+
+-- 3-a) Insertar documentos
+-- Puede pasarse tanto un documento o un arreglo, no se recomienda su uso.
+db.facturas.insert({...}) 
+
+-- Para ingresar un solo documento. Recibe un documento, devuelve un objeto
+-- indicando si la operación fue satisfactoria y el ObjectId creado.
+db.facturas.insertOne({...})
+
+-- Para ingresar varios documentos en simultáneo. Recibe un arreglo de documentos
+-- y devuelve un objeto indicando si la operación fue satisfactoria junto con un 
+-- arreglo de ObjectId's insertados.
+db.facturas.insertMany([{...},{...}])
+
+-- 3-b) Buscar documentos
+-- Documentación completa -> https://docs.mongodb.com/manual/tutorial/query-documents/
+
+-- Traer todos los documentos de una colección
+db.facturas.find()
+
+-- Si quiere recibirse un formato más legible, puede agregarse el método pretty()
+db.facturas.find().pretty()
+
+-- El método find recibe un documento de filtrado. Por ejemplo, para buscar
+-- todas las facturas del tipo "A"
+db.facturas.find({tipo: "a"}).pretty()
+
+-- Los filtros son AND implícitos. Lo siguiente busca las facturas 
+-- de tipo "A" que ya fueron cobradas.
+db.facturas.find({tipo: "a", cobrada: true}).pretty()
+
+-- Si quiere buscarse las facturas del tipo "A" O las de tipo "B"
+db.facturas.find({$or:[{tipo: "a"}, {tipo: "b"}}]})
+
+-- Existen operadores para otro tipos de búsquedas. 
+-- Docs -> https://docs.mongodb.com/manual/reference/operator/query/#query-selectors
+
+-- Por ejemplo, buscar productos con precios mayores a $15:
+db.productos.find({precio: {$lt: 15}}).pretty()
+
+-- Pueden buscarse documentos "nesteados". 
+-- Por ejemplo, Traer todas las facturas del cliente "Toledo"
+db.facturas.find({"cliente.razonSocial": "Toledo"}).pretty()
+
+-- 3-c) Actualizar / Borrar documentos
+
+-- Actualizar -> https://docs.mongodb.com/manual/tutorial/update-documents/
+-- Borrar -> https://docs.mongodb.com/manual/tutorial/remove-documents/
+
+
+___________________________
+
+(1) Cree las colecciones "Facturas" y "Productos" segÃºn se indico en la teorÃ­a y las colecciones "Clientes" y "Stock" como crea conveniente.
+(2) Inserte al menos 20 productos, 3 clientes, 6 facturas y llene la colecciÃ³n "Stock" como crea conveniente.
+(3) Todos los clientes que hayan hecho compras con algÃºn producto cuyo precio supere los $1000 y hayan pedido factura tipo "a" recibirÃ¡n una compensaciÃ³n. Entregue el listado.
+(4) Entregue un listado de todas las facturas cobradas que sean del tipo "a" o "b".
+(5) Actualice el cliente con razÃ³n social "Sarasa Inc" y cambielo por "Sarasa S.A.". Si el cliente no existe, debe crearse. Utilizar una sola instrucciÃ³n.
+(6) Actualice el precio de un producto de la colecciÃ³n "Productos". Busque luego las facturas que incluyan ese producto. Se modificÃ³ el precio en esa colecciÃ³n? Por quÃ©?
+(7) Actualice el nombre o marca de un producto. QuÃ© sucediÃ³ con la tabla stock? CÃ³mo la habÃ­a creado?
+(8) Calcule el total de todas las facturas.
+
+---------------------
+
+------------------------1---------------------
+Una compañía aérea necesita una base de datos para registrar la información de sus vuelos.
+Los vuelos están caracterizados por un Id, la fecha y los aeropuertos de origen y destino. Cada
+vuelo es realizado por un avión. Los aviones tienen una matrícula que los identifica, el fabricante,
+un modelo e información sobre su capacidad (número máximo de pasajeros) y autonomía de vuelo
+(en horas). La tripulación asignada al vuelo está formada por el personal de la propia compañía. De
+cada trabajador se conoce su id, su nombre y su categoría profesional, así como el puesto que ocupa
+en cada vuelo en particular.
+Por último, para cada vuelo, se almacena la lista completa de pasajeros, con su dni, el nombre, el
+asiento que ocupa y su clase (turista, primera o business).
+Construye en el modelo conceptual y el modelo lógico correspondientes al enunciado expuesto
+
+-----------------------2------------------------
+En redes sociales como Facebook los perfiles de usuario son una herramienta fundamental. Crea
+una base de datos sencilla que permita almacenarlos.
+Los usuarios tienen un nombre real, su nick (que es único), una clave de acceso y una cuenta de
+correo electrónico. Los usuarios pueden escribir comentarios, los cuales están formados por un
+texto y la fecha de creación. Además, los usuarios pueden aparecer en fotografías. Una fotografía
+tiene un nombre de archivo y una descripción opcional. Para marcar a los usuarios en las
+fotografías, se emplea un marco del que se guardan sus coordenadas.
+Construye en el modelo conceptual y el modelo lógico correspondientes al enunciado expuesto
+
+----------------------------------------------
+
+
+
